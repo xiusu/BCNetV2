@@ -46,7 +46,7 @@ Channel-Bench-Macro is a channel benchmark on macro search space. The Channel-Be
  parameters, FLOPs, and training logs on CIFAR-10 dataset. Channel-Bench-Macro is the corresponding benchmark of [NAS-Bench-Marco](https://github.com/xiusu/NAS-Bench-Macro),
   which serves for channel number search / channel pruning algorithms.
 
-All the evaluated architectures are stored in [Channel-Bench-Macro](https://github.com/xiusu/Channel-Bench-Macro) of file `nas-bench-macro_cifar10.json` with the following format:
+All the evaluated architectures are stored in [Channel-Bench-Macro](https://github.com/xiusu/Channel-Bench-Macro) of file [Results_MobileNet.json](https://github.com/xiusu/Channel-Bench-Macro/blob/main/Results_MobileNet.json) and [Results_ResNet.json](https://github.com/xiusu/Channel-Bench-Macro/blob/main/Results_ResNet.json)  with the following format:
 
 ```
 {

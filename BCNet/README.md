@@ -7,7 +7,6 @@ BCNet aims to search with neural architectures in more fairly way,
 The virtual env should be activated first:
 ```shell
 source pt0.4.1 # or source sample/source.sh
-easy_install --user backends/cellular-0.1-py3.7.egg #install cellular
 pip install astor --user # required for quantization function.
 pip install pthflops --user
 ```

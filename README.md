@@ -8,7 +8,6 @@ BCNet and boost the search of supernet but standardized code.
 The virtual env should be activated first:
 ```shell
 pytorch >= 1.3.1
-easy_install --user backends/cellular-0.1-py3.7.egg #install cellular
 pip install astor --user # required for quantization function.
 pip install pthflops --user
 ```

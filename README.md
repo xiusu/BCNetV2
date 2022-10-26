@@ -3,7 +3,7 @@ This repository includes the code for [BCNetV2: Searching for Network Width with
 BCNetV2 aims to search with neural architectures with more fairly way, [BCNetV2](https://github.com/xiusu/BCNetV2/tree/main/BCNetV2) is an improved version for [BCNet](https://github.com/xiusu/BCNetV2/tree/main/BCNet). BCNetV2 follows almost all settings of 
 BCNet and boost the search of supernet but standardized code.
 
-## Dependences
+## Dependencies
 
 The virtual env should be activated first:
 ```shell
@@ -20,20 +20,20 @@ pip install pymoo==0.3.0 --user
 
 ## BCNetV2
 BCNetV2 is a channel number search (neural architecture search) method that aims to boost the fairly training of supernet. With BCNetV2,
-we can boost the search result with two ways.  
+we can boost the search result in two ways.  
 
 (1) BCNetV2 can boost the training fairness of supernet. With BCNetV2, all channels can be equally trained with the same training times. 
 Therefore, BCNetV2 can be more effective for ranking different architectures.
 
 <img src="BCNetV2/figs/fig3.png" width="800" height="350"> 
 
-(2) We propose to search with a pre-defined smallest channel groups, since a small dimension in one layer will destroy the performance of 
-an architecture. With a pre-defined smallest channel groups, the search space can be reduced by exponentially and thus boost the search results.
+(2) We propose to search with pre-defined smallest channel groups since a small dimension in one layer will destroy the performance of 
+an architecture. With pre-defined smallest channel groups, the search space can be reduced exponentially and thus boost the search results.
  
 <img src="BCNetV2/figs/search_space.png" width="400" height="300"> <img src="BCNetV2/figs/supernet_performance.png" width="400" height="300">
  
  
-BCNetV2 is a plug and play method and can be easily used within other channel number search or neural architecture search algorithms.
+BCNetV2 is a plug-and-play method and can be easily used within other channel number search or neural architecture search algorithms.
 From our experience, you can boost your search result with our BCNetV2 in other NAS methods.
 
 
@@ -75,8 +75,7 @@ PYTHON-PATH=../../:$PYTHONPATH sh tools/slurm_train.sh VA 8 config/strategies/mb
 ```
 
 ## Citation
-If you find that BCNet interesting and help your work, please consider citing it:
-
+If you find BCNet and BCNetV2 interesting and help your work, please consider citing them:
 ```
 @article{bcnetv2,
   title={Searching for Network Width with Bilaterally Coupled Network},

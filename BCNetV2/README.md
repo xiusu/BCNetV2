@@ -66,11 +66,13 @@ All the evaluated architectures are stored in Channel-Bench-Macro of files [Resu
 
 We separate the search and retrain for NAS. For searching useful architectures:
 ```
+cd example\classification
 PYTHONPATH=../../:$PYTHONPATH  sh tools/slurm_train.sh VA 4 con-fig/strategies/NAS/bcnet_supernet_4cards.yaml nas_pruning_model config/models/MobileNetV2/MobileNetV2_1.5x_min6.yaml --edgenn-config config/edgenn/pruning/bcnet_train_search_bin20_min6_305M.yaml
 ```
 
 For retraining of searched architectures:
 ```
+cd example\classification
 PYTHON-PATH=../../:$PYTHONPATH sh tools/slurm_train.sh VA 8 config/strategies/mbv2_se.yaml nas_pruning_model config/retrain/BCNet_mbv2_comp_150M_retrain_test.yaml
 ```
 

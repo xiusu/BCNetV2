@@ -1,0 +1,276 @@
+model:
+    channels: [64, 64, 64, 256, 256, 64, 64, 256, 64, 64,
+               256, 128, 128, 512, 512, 128, 128, 512, 128, 128,
+               512, 128, 128, 512, 256, 256, 1024, 1024, 256, 256,
+               1024, 256, 256, 1024, 256, 256, 1024, 256, 256, 1024,
+               256, 256, 1024, 512, 512, 2048, 2048, 512, 512, 2048,
+               512, 512, 2048]
+
+    backbone:
+      # [n, stride, c_in, c_out, [expand_ratio], channel_search, [op]]
+      conv_stem: [1, 2, 3, 64, [], False, ['conv7x7']]
+      maxp: [1, 2, 1, 1, [], False, ['maxpool3x3']]
+      stage1: [3, 1, 16, 24, [6], False, ['nr_3x3']]
+      stage2: [4, 2, 24, 32, [6], False, ['nr_3x3']]
+      stage3: [6, 2, 32, 64, [6], False, ['nr_3x3']]
+      stage4: [3, 2, 64, 96, [6], False, ['nr_3x3']]
+      final_pooling: True
+    head:
+      linear1:
+        dim_in: 1280
+        dim_out: 1000
+    loss_type: 's-softmax'
+    width_multiplier: 0.5
+
+retrain:
+    flag: False
+    # FLOPs 4.1G
+    strategy:
+        max_iter: 752000
+        optimizer:
+            type: 'SGD'
+            lr: 0.1  # in proxyless: 0.0125 per gpu
+            weight_decay: 0.0001
+            momentum: 0.9
+            nesterov: True
+        resume: False
+        lr_scheduler:
+            #base_lr: 0.12
+            lr_steps: [200240, 400480, 500600]
+            lr_mults: [0.1, 0.1, 0.1]
+            warmup_steps: 12515  # warmup epochs: 5 steps=5*2503=12515
+            warmup_strategy: 'gradual'
+            warmup_lr: 0.2
+            decay_stg: 'cosine'
+            # final lr in cosine strategy
+            alpha: 0.00001
+            # how many iterations it takes to decay lr to 'alpha'
+            decay_step: 732000
+        bin_search: True
+        bin_config:
+            P_train: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            Efficient_topk: 100
+            skip_list: [[3, 4, 7, 10], [13, 14, 17, 20, 23], [26, 27, 30, 33, 36, 39, 42], [45, 46, 49, 52]]
+
+        task_type: 'imagenet'
+        snapshot_freq: 4000
+        print_freq: 20
+        basic_path: '../generalNAS_exp/imagenet_resnet50_uniform_0.25'
+        save_path: '../generalNAS_exp/imagenet_resnet50/retrain'
+
+    data:
+        workers: 8  # dataloader worker num
+        task_type: 'imagenet'
+        data_type: 'ssst'
+        scatter_mode: False
+        final_height: 224
+        final_width: 224
+        final_channel: 3
+        augmentation:
+            rand_resize:
+                output_size: 224
+                scale: [0.08, 1.0]
+                ratio: [0.75, 1.3333333333]
+            affine:
+                mirror:
+                    mirror_prob: 0.5
+            # resize
+            resize:
+                output_size: [224, 224]
+            # normalize
+            normalize:
+                normalize_type: 'mean_std'
+                mean: [123.675, 116.28, 103.53]   #(0.485, 0.456, 0.406)
+                std: [58.395, 57.120, 57.375]
+        imagenet:
+            type: 'classification'
+            task: 'imagenet'
+            json_path: '/mnt/lustre/suxiu/dataset/imagenet/imagenet.json'
+            prefix: '/mnt/lustre/share/images/train'
+            batch_size: 32 # for single gpu
+
+sample:
+    flag: False
+    epoch: 1  #sample epoch
+    flops_constrant: 0.141  # changed to percent
+    sampler:
+        type: 'evolution'
+        Deduce_P: 0.015  # init_sample = every epoch flops ^0.5 - Deduce_P
+        kwargs:
+            log_path: '../generalNAS_exp/imagenet_greedynas_nopool_search'
+            Sample_test_num: None
+            train_eval: True
+            #cal_time: 6
+            search_num: 10 #10
+            sample_num: 1
+            pop_size: 40 #50
+            Bet_pop_size: 40 #30
+            n_gens: 80 #20
+            extension_loc: [[3, 4, 7, 10], [13, 14, 17, 20, 23], [26, 27, 30, 33, 36, 39, 42], [45, 46, 49, 52]]
+
+    strategy:
+        task_type: 'imagenet-test'
+        snapshot_freq: 2000
+        print_freq: 20
+        use_basic_path: True
+        save_path: '../generalNAS_exp/imagenet_mbnetv2_retrain_total/epoch0' #meiyong？  '../generalNAS_exp/imagenet_greedynas_nopool_search'
+        load_name: None #'iter_70000_ckpt.pth.tar'  #epoch == 1 and load_name == None for save_path and load_name useful
+
+    data:
+        workers: 8  # dataloader worker num
+        task_type: 'imagenet-test'
+        data_type: 'ssst'
+        scatter_mode: False
+        final_height: 224
+        final_width: 224
+        final_channel: 3
+        augmentation:
+            # resize
+            resize:
+                output_size: 256
+            center_crop:
+                output_size: 224
+            # normalize
+            normalize:
+                normalize_type: 'mean_std'
+                mean: [123.675, 116.28, 103.53]
+                std: [58.395, 57.120, 57.375]
+        imagenet:
+            type: 'classification'
+            task: 'imagenet'
+            json_path: '/mnt/lustre/suxiu/dataset/imagenet/imagenet_val.json'
+            prefix: '/mnt/lustre/share/images/val'
+            batch_size: 128 # for single gpu
+
+
+final_train:
+    flag: True
+    train_mode: 'retrain'  #it can be retrain or finetune
+    # FLOPs 4.1G
+    strategy:
+      retrain:
+        max_iter: 752000
+        optimizer:
+            type: 'SGD'
+            lr: 0.1  # in proxyless: 0.0125 per gpu
+            weight_decay: 0.0001
+            momentum: 0.9
+            nesterov: True
+        resume: False
+        lr_scheduler:
+            #base_lr: 0.12
+            lr_steps: [200240, 400480, 500600]
+            lr_mults: [0.1, 0.1, 0.1]
+            warmup_steps: 12515  # warmup epochs: 5 steps=5*2503=12515
+            warmup_strategy: 'gradual'
+            warmup_lr: 0.2
+            decay_stg: 'cosine'
+            # final lr in cosine strategy
+            alpha: 0.00001
+            # how many iterations it takes to decay lr to 'alpha'
+            decay_step: 732000
+        task_type: 'imagenet'
+        snapshot_freq: 2000
+        print_freq: 20
+        use_basic_path: True
+        save_path: '../generalNAS_exp/imagenet_resnet50/retrain'
+
+      finetune:
+        max_iter: 752000
+        optimizer:
+              type: 'SGD'
+              lr: 0.1  # in proxyless: 0.0125 per gpu
+              weight_decay: 0.0001
+              momentum: 0.9
+              nesterov: True
+        resume: False
+        lr_scheduler:
+              #base_lr: 0.12
+              lr_steps: [200240, 400480, 500600]
+              lr_mults: [0.1, 0.1, 0.1]
+              warmup_steps: 12515  # warmup epochs: 5 steps=5*2503=12515
+              warmup_strategy: 'gradual'
+              warmup_lr: 0.2
+              decay_stg: 'cosine'
+              # final lr in cosine strategy
+              alpha: 0.00001
+              # how many iterations it takes to decay lr to 'alpha'
+              decay_step: 732000
+
+        task_type: 'imagenet'
+        snapshot_freq: 2000
+        print_freq: 20
+        use_basic_path: True
+        save_path: '../generalNAS_exp/imagenet_resnet50/retrain'
+
+    data:
+        workers: 8  # dataloader worker num
+        task_type: 'imagenet'
+        data_type: 'ssst'
+        scatter_mode: False
+        final_height: 224
+        final_width: 224
+        final_channel: 3
+        augmentation:
+            rand_resize:
+                output_size: 224
+                scale: [0.08, 1.0]
+                ratio: [0.75, 1.3333333333]
+            affine:
+                mirror:
+                    mirror_prob: 0.5
+            # resize
+            resize:
+                output_size: [224, 224]
+            # normalize
+            normalize:
+                normalize_type: 'mean_std'
+                mean: [123.675, 116.28, 103.53]   #(0.485, 0.456, 0.406)
+                std: [58.395, 57.120, 57.375]
+        imagenet:
+            type: 'classification'
+            task: 'imagenet'
+            json_path: '/mnt/lustre/suxiu/dataset/imagenet/imagenet.json'
+            prefix: '/mnt/lustre/share/images/train'
+            batch_size: 32 # for single gpu
+
+
+
+
+test:
+    flag: True
+    strategy:
+        task_type: 'imagenet-test'
+        snapshot_freq: 2000
+        print_freq: 20
+        use_basic_path: True
+        save_path: '../generalNAS_exp/imagenet_resnet50_50p_ori/checkpoint'
+        load_iter: 750000
+        start: 742000
+        end: 752000
+        strip: 200
+
+    data:
+        workers: 8  # dataloader worker num
+        task_type: 'imagenet-test'
+        data_type: 'ssst'
+        scatter_mode: False
+        final_height: 224
+        final_width: 224
+        final_channel: 3
+        augmentation:
+            resize:
+                output_size: 256
+            center_crop:
+                output_size: 224
+            normalize:
+                normalize_type: 'mean_std'
+                mean: [123.675, 116.28, 103.53]
+                std: [58.395, 57.120, 57.375]
+        imagenet:
+            type: 'classification'
+            task: 'imagenet'
+            json_path: '/mnt/lustre/suxiu/dataset/imagenet/imagenet_val.json'
+            prefix: '/mnt/lustre/share/images/val'
+            batch_size: 32 # for single gpu
+

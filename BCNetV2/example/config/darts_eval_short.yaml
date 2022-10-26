@@ -1,0 +1,41 @@
+workers: 4
+epochs: 100
+start_epoch: 0
+batch_size: 96
+lr_scheduler:
+    type: 'cosine'
+    lr: 0.025
+    warmup_epochs: 0
+momentum: 0.9
+weight_decay: 3.e-4
+nesterov: False
+grad_clip: 5
+print_freq: 20
+resume:
+save: './workdir/darts/cifar10-eval-short'
+evaluate: False
+
+data:
+    type: 'cifar10'
+    root: './data/cifar10'
+    train_portion: 0.5
+    cutout: True
+    cutout_length: 16
+
+model:
+    type: 'DARTSEvalModel'
+    drop_path_prob: 0.2
+    auxiliary_weight: 0.4
+    backbone:
+        type: 'DARTSEvalNetworkCIFAR'
+        C: 36
+        num_classes: 10
+        layers: 20
+        auxiliary: True
+        genotype: "Genotype(normal=[('sep_conv_3x3', 0), ('sep_conv_3x3', 1), ('skip_connect', 0), ('dil_conv_3x3', 1), ('skip_connect', 0), ('sep_conv_3x3', 1), ('skip_connect', 0), ('sep_conv_3x3', 1)], normal_concat=range(2, 6), reduce=[('avg_pool_3x3', 0), ('max_pool_3x3', 1), ('skip_connect', 2), ('avg_pool_3x3', 0), ('skip_connect', 3), ('dil_conv_5x5', 2), ('skip_connect', 3), ('skip_connect', 2)], reduce_concat=range(2, 6))"
+    loss:
+        type: 'CrossEntropyLoss'
+
+trainer:
+    type: 'DARTS'
+    stage: ['evaluate']

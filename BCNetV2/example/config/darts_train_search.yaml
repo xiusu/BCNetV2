@@ -1,0 +1,47 @@
+workers: 4
+epochs: 50
+start_epoch: 0
+batch_size: 64
+lr_scheduler:
+    type: 'cosine'
+    lr: 0.025
+    warmup_epochs: 0
+momentum: 0.9
+weight_decay: 3.e-4
+nesterov: False
+grad_clip: 5
+print_freq: 20
+resume:
+save: './workdir/darts/cifar10-train-search'
+evaluate: False
+seed: 0
+
+data:
+    type: 'cifar10'
+    root: './data/cifar10'
+    train_portion: 0.5
+
+model:
+    type: 'DARTSSearchModel'
+    backbone:
+        type: 'DARTSSearchNetwork'
+        C: 16
+        num_classes: 10
+        layers: 8
+    loss:
+        type: 'CrossEntropyLoss'
+
+trainer:
+    type: 'DARTS'
+    stage: ['supernet', 'search']
+    #early_stop:
+    #    skip_in_norm_cell: 2
+    #    arch_rank_stable_epoch: 10
+    algorithm:
+        type: 'DARTS'
+        unrolled: True
+        optimizer:
+            type: 'Adam'
+            lr: 3.e-4
+            betas: [0.5, 0.999]
+            weight_decay: 1.e-3

@@ -1,0 +1,12 @@
+# files
+*.txt
+*.sw*
+*.orig
+*.pyc
+*.pth.tar
+*/event/*
+log/*
+*.idea/*
+# folders
+**/__pycache__/**
+

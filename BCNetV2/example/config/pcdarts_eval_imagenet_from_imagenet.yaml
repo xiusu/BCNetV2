@@ -1,0 +1,43 @@
+workers: 4
+epochs: 250
+start_epoch: 0
+batch_size: 64
+lr_scheduler:
+    type: 'cosine'
+    lr: 0.5
+    warmup_epochs: 5
+momentum: 0.9
+weight_decay: 3.e-5
+nesterov: False
+grad_clip: 5
+print_freq: 20
+resume:
+save: './workdir/pcdarts/imagenet-eval-from-imagenet'
+evaluate: False
+
+data:
+    type: 'imagenet'
+    traindir: '/mnt/lustre/share/images/train/'
+    trainlabel: '/mnt/lustre/share/images/meta/train.txt'
+    valdir: '/mnt/lustre/share/images/val/'
+    vallabel: '/mnt/lustre/share/images/meta/val.txt'
+
+model:
+    type: 'DARTSEvalModel'
+    drop_path_prob: 0.
+    auxiliary_weight: 0.4
+    backbone:
+        type: 'DARTSEvalNetworkImageNet'
+        C: 48
+        num_classes: 1000
+        layers: 14
+        auxiliary: True
+        genotype: "Genotype(normal=[('sep_conv_5x5', 0), ('dil_conv_5x5', 1), ('sep_conv_3x3', 0), ('sep_conv_5x5', 1), ('dil_conv_5x5', 0), ('skip_connect', 2), ('dil_conv_3x3', 0), ('sep_conv_5x5', 4)], normal_concat=range(2, 6), reduce=[('dil_conv_5x5', 0), ('avg_pool_3x3', 1), ('sep_conv_5x5', 0), ('max_pool_3x3', 2), ('skip_connect', 0), ('dil_conv_3x3', 3), ('max_pool_3x3', 0), ('max_pool_3x3', 1)], reduce_concat=range(2, 6))"
+    loss:
+        type: 'CrossEntropyLabelSmooth'
+        num_classes: 1000
+        epsilon: 0.1
+
+trainer:
+    type: 'DARTS'
+    stage: ['evaluate']

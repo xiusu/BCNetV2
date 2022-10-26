@@ -1,0 +1,396 @@
+import torch
+import torch.nn as nn
+from collections import OrderedDict
+import torch.nn.functional as F
+import random
+
+OPS = OrderedDict()
+# CAUTION: The assign order is Strict
+
+
+OPS['ir_3x3_nse'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=3, 
+                                                                           activation=HSwish, use_se=False)
+OPS['ir_5x5_nse'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=5, 
+                                                                           activation=HSwish, use_se=False)
+OPS['ir_7x7_nse'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=7, 
+                                                                           activation=HSwish, use_se=False)
+OPS['ir_3x3_se'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=3, 
+                                                                           activation=HSwish, use_se=True)
+OPS['ir_5x5_se'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=5, 
+                                                                           activation=HSwish, use_se=True)
+OPS['ir_7x7_se'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=7, 
+                                                                           activation=HSwish, use_se=True)
+
+
+OPS['ir_3x3'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=3)
+OPS['ir_5x5'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=5)
+OPS['ir_7x7'] = lambda inp, oup, t, stride: InvertedResidual(inp=inp, oup=oup, t=t, stride=stride, k=7)
+
+
+OPS['id'] = lambda inp, oup, t, stride: Identity(inp=inp, oup=oup, t=t, stride=stride, k=1)
+OPS['conv2d'] = lambda inp, oup, t, stride: Conv2d(inp=inp, oup=oup, stride=stride, k=1)
+OPS['conv3x3'] = lambda inp, oup, t, stride: Conv2d(inp=inp, oup=oup, stride=stride, k=3)
+
+
+class DynamicLinear(nn.Linear):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.in_indices = None
+        self.out_indices = None
+
+    def set_indices(self, in_indices, out_indices):
+        self.in_indices = in_indices
+        self.out_indices = out_indices
+
+    def forward(self, input):
+        if self.in_indices is not None:
+            assert self.out_indices is not None, 'current version does not support linear module search'
+            w = self.weight[:, self.in_indices[0]:self.in_indices[1]+1].contiguous()
+            return F.linear(input, w, self.bias)
+        else:
+            return super().forward(input)
+    
+    def build_nn_module(self):
+        in_features = self.in_features
+        out_features = self.out_features
+        if self.in_indices is not None:
+            in_features = self.in_indices[1] - self.in_indices[0] + 1
+        else:
+            in_features = self.in_features
+        if self.out_indices is not None:
+            out_features = self.out_indices[1] - self.out_indices[0] + 1
+        else:
+            out_features = self.out_features
+        return torch.nn.Linear(in_features, out_features, self.bias is not None)
+
+
+class DynamicBatchNorm2d(nn.BatchNorm2d):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.indices = None
+
+    def set_indices(self, indices):
+        self.indices = indices
+
+    def forward(self, input):
+        if self.indices is None or self.indices[0] is None:
+            return super().forward(input)
+        elif self.indices is not None and not isinstance(self.indices[0], (tuple, list)):
+            self._check_input_dim(input)
+            # exponential_average_factor is self.momentum set to
+            # (when it is available) only so that if gets updated
+            # in ONNX graph when this node is exported to ONNX.
+            if self.momentum is None:
+                exponential_average_factor = 0.0
+            else:
+                exponential_average_factor = self.momentum
+
+            if self.training and self.track_running_stats:
+                # TODO: if statement only here to tell the jit to skip emitting this when it is None
+                if self.num_batches_tracked is not None:
+                    self.num_batches_tracked += 1
+                    if self.momentum is None:  # use cumulative moving average
+                        exponential_average_factor = 1.0 / float(self.num_batches_tracked)
+                    else:  # use exponential moving average
+                        exponential_average_factor = self.momentum
+            w = self.weight[self.indices[0]:self.indices[1]+1].contiguous()
+            b = self.bias[self.indices[0]:self.indices[1]+1].contiguous() if self.bias is not None else None
+            r_mean = self.running_mean[self.indices[0]:self.indices[1]+1].contiguous()
+            r_var = self.running_var[self.indices[0]:self.indices[1]+1].contiguous()
+            return F.batch_norm(
+                input, r_mean, r_var, w, b,
+                self.training or not self.track_running_stats,
+                exponential_average_factor, self.eps)
+        else:    # several non-continuous groups of channels
+            self._check_input_dim(input)
+            # exponential_average_factor is self.momentum set to
+            # (when it is available) only so that if gets updated
+            # in ONNX graph when this node is exported to ONNX.
+            if self.momentum is None:
+                exponential_average_factor = 0.0
+            else:
+                exponential_average_factor = self.momentum
+
+            if self.training and self.track_running_stats:
+                # TODO: if statement only here to tell the jit to skip emitting this when it is None
+                if self.num_batches_tracked is not None:
+                    self.num_batches_tracked += 1
+                    if self.momentum is None:  # use cumulative moving average
+                        exponential_average_factor = 1.0 / float(self.num_batches_tracked)
+                    else:  # use exponential moving average
+                        exponential_average_factor = self.momentum
+            ws = []
+            bs = []
+            r_means = []
+            r_vars = []
+            for indices in self.indices:
+                ws.append(self.weight[indices[0]:indices[1]+1])
+                bs.append(self.bias[indices[0]:indices[1]+1])
+                r_means.append(self.running_mean[indices[0]:indices[1]+1])
+                r_vars.append(self.running_var[indices[0]:indices[1]+1])
+            w = torch.cat(ws, dim=0).contiguous()
+            b = torch.cat(bs, dim=0).contiguous()
+            r_mean = torch.cat(r_means, dim=0).contiguous()
+            r_var = torch.cat(r_vars, dim=0).contiguous()
+
+            return F.batch_norm(
+                input, r_mean, r_var, w, b,
+                self.training or not self.track_running_stats,
+                exponential_average_factor, self.eps)
+
+    def build_nn_module(self):
+        if self.indices is not None:
+            if not isinstance(self.indices[0], int):
+                num_features = 0
+                for indices in self.indices:
+                    if indices is None:
+                        continue
+                    num_features += indices[1] - indices[0] + 1
+                if num_features == 0:
+                    num_features = self.num_features
+            else:
+                num_features = self.indices[1] - self.indices[0] + 1
+        else:
+            num_features = self.num_features
+        
+        return nn.BatchNorm2d(num_features, self.eps, self.momentum, self.weight is not None, self.track_running_stats)
+
+
+class DynamicConv2d(nn.Conv2d):
+    def __init__(self, *args, **kwargs):
+        setattr(self, 'pruning_ignore', kwargs.pop('pruning_ignore'))
+        super(DynamicConv2d, self).__init__(*args, **kwargs)
+        self.in_indices = None
+        self.out_indices = None
+
+    def forward(self, x):
+        # get channel settings 
+        in_indices, out_indices = self.in_indices, self.out_indices
+        if in_indices is None and out_indices is None:
+            # normal conv
+            return super().forward(x)
+        if out_indices is None:
+            # not searching module
+            in_c = x.size(1)
+            if in_c == self.in_channels:
+                return super().forward(x)
+            else:
+                if isinstance(in_indices[0], (tuple, list)):  # several non-continuous groups of channels
+                    ws = []
+                    for indices in in_indices:
+                        ws.append(self.weight[:, indices[0]:indices[1]+1])
+                    w = torch.cat(ws, dim=1).contiguous()
+                else:
+                    w = self.weight[:, in_indices[0]:in_indices[1]+1].contiguous()
+                return F.conv2d(x, w, self.bias, self.stride, self.padding, self.dilation, self.groups)
+        elif in_indices is None or in_indices[0] is None:
+            w = self.weight[out_indices[0]:out_indices[1]+1].contiguous()
+            b = self.bias[out_indices[0]:out_indices[1]+1] if self.bias is not None else None
+            return F.conv2d(x, w, b, self.stride, self.padding, self.dilation, 
+                            int(self.groups * w.shape[0] / self.out_channels) if self.groups != 1 else 1)
+        else:
+            if self.groups == 1:
+                if isinstance(in_indices[0], (tuple, list)):  # several non-continuous groups of channels TODO: support group conv
+                    ws = []
+                    for indices in in_indices:
+                        ws.append(self.weight[out_indices[0]:out_indices[1]+1, indices[0]:indices[1]+1])
+                    w = torch.cat(ws, dim=1).contiguous()
+                else:
+                    w = self.weight[out_indices[0]:out_indices[1]+1, in_indices[0]:in_indices[1]+1].contiguous()
+            else:
+                w = self.weight[out_indices[0]:out_indices[1]+1]
+            b = self.bias[out_indices[0]:out_indices[1]+1] if self.bias is not None else None
+            return F.conv2d(x, w, b, self.stride, self.padding, self.dilation, 
+                            int(self.groups * w.shape[0] / self.out_channels) if self.groups != 1 else 1)
+
+    def set_indices(self, in_indices, out_indices):
+        self.in_indices = in_indices
+        self.out_indices = out_indices
+    
+    def flops(self, input_shape):
+        c, w, h = input_shape
+        w = (w + self.padding[0] * 2 - self.kernel_size[0]) // self.stride[0] + 1
+        h = (h + self.padding[1] * 2 - self.kernel_size[1]) // self.stride[1] + 1
+        in_indices, out_indices = self.in_indices, self.out_indices
+        in_channels, out_channels, groups = self.in_channels, self.out_channels, self.groups  # normal conv
+        if in_indices is not None and in_indices[0] is not None:
+            if isinstance(in_indices[0], (tuple, list)):  # several non-continuous groups of channels
+                in_channels = 0
+                for indices in in_indices:
+                    in_channels += indices[1] - indices[0] + 1
+            else:
+                in_channels = in_indices[1] - in_indices[0] + 1
+        if out_indices is not None:
+            out_channels = out_indices[1] - out_indices[0] + 1
+        if self.groups != 1:
+            groups = int(self.groups * out_channels / self.out_channels)
+        c = out_channels
+        flops = in_channels * out_channels * w * h // groups * self.kernel_size[0] * self.kernel_size[1]
+        return flops, (c, w, h)
+
+    def build_nn_module(self):
+        in_indices, out_indices = self.in_indices, self.out_indices
+        in_channels, out_channels, groups = self.in_channels, self.out_channels, self.groups  # normal conv
+        if in_indices is not None and in_indices[0] is not None:
+            if isinstance(in_indices[0], (tuple, list)):  # several non-continuous groups of channels
+                in_channels = 0
+                for indices in in_indices:
+                    in_channels += indices[1] - indices[0] + 1
+            else:
+                in_channels = in_indices[1] - in_indices[0] + 1
+        if out_indices is not None:
+            out_channels = out_indices[1] - out_indices[0] + 1
+        if self.groups != 1:
+            groups = int(self.groups * out_channels / self.out_channels)
+        return nn.Conv2d(in_channels, out_channels, self.kernel_size, self.stride, self.padding, 
+                         self.dilation, groups, self.bias is not None)        
+
+
+class Conv2d(nn.Module):
+    def __init__(self, inp, oup, stride, k, activation=nn.ReLU, **kwargs):
+        super(Conv2d, self).__init__(**kwargs)
+        self.stride = stride
+        self.k = k
+        self.conv = nn.Sequential(
+            nn.Conv2d(inp, oup, kernel_size=k, stride=stride, padding=k//2, bias=False),
+            nn.BatchNorm2d(oup),
+            activation()
+        )
+
+    def forward(self, x):
+        return self.conv(x)
+
+    def flops(self, input_shape):
+        c, h, w = input_shape
+        m = self.conv[0]
+        c = m.out_channels
+        w = (w + m.padding[0] * 2 - m.kernel_size[0]) // m.stride[0] + 1
+        h = (h + m.padding[1] * 2 - m.kernel_size[1]) // m.stride[1] + 1
+        flops = m.in_channels * m.out_channels * w * h // m.groups * m.kernel_size[0] * m.kernel_size[1]
+        return flops, (c, w, h)
+
+
+class HSwish(nn.Module):
+    def __init__(self, inplace=True):
+        super(HSwish, self).__init__()
+        self.inplace = inplace
+
+    def forward(self, x):
+        out = x * F.relu6(x + 3, inplace=self.inplace) / 6
+        return out
+
+
+class HSigmoid(nn.Module):
+    def __init__(self, inplace=True):
+        super(HSigmoid, self).__init__()
+        self.inplace = inplace
+
+    def forward(self, x):
+        out = F.relu6(x + 3, inplace=self.inplace) / 6
+        return out
+
+
+class SqueezeExcite(nn.Module):
+    def __init__(self, in_channel,
+                 reduction=4,
+                 squeeze_act=nn.ReLU(inplace=True),
+                 excite_act=HSigmoid(inplace=True)):
+        super(SqueezeExcite, self).__init__()
+        self.global_pooling = nn.AdaptiveAvgPool2d(1)
+        self.squeeze_conv = nn.Conv2d(in_channels=in_channel,
+                                      out_channels=in_channel // reduction,
+                                      kernel_size=1,
+                                      bias=True)
+        self.squeeze_act = squeeze_act
+        self.excite_conv = nn.Conv2d(in_channels=in_channel // reduction,
+                                     out_channels=in_channel,
+                                     kernel_size=1,
+                                     bias=True)
+        self.excite_act = excite_act
+
+    def forward(self, inputs):
+        feature_pooling = self.global_pooling(inputs)
+        feature_squeeze_conv = self.squeeze_conv(feature_pooling)
+        feature_squeeze_act = self.squeeze_act(feature_squeeze_conv)
+        feature_excite_conv = self.excite_conv(feature_squeeze_act)
+        feature_excite_act = self.excite_act(feature_excite_conv)
+        return inputs * feature_excite_act
+
+
+class InvertedResidual(nn.Module):
+    def __init__(self, inp, oup, stride, t, k=3, activation=nn.ReLU, use_se=False, **kwargs):
+        super(InvertedResidual, self).__init__(**kwargs)
+        self.stride = stride
+        self.t = t
+        self.k = k
+        self.use_se = use_se
+        assert stride in [1, 2]
+        hidden_dim = round(inp * t)
+        if t == 1:
+            self.conv = nn.Sequential(
+                # dw            
+                nn.Conv2d(hidden_dim, hidden_dim, k, stride, padding=k//2, groups=hidden_dim, bias=False),
+                nn.BatchNorm2d(hidden_dim),
+                activation(inplace=True),
+                # se
+                SqueezeExcite(hidden_dim) if use_se else nn.Sequential(),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup)
+            )
+        else:
+            self.conv = nn.Sequential(
+                # pw
+                nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(hidden_dim),
+                activation(inplace=True),
+                # dw
+                nn.Conv2d(hidden_dim, hidden_dim, k, stride, padding=k//2, groups=hidden_dim, bias=False),
+                nn.BatchNorm2d(hidden_dim),
+                activation(inplace=True),
+                # se
+                SqueezeExcite(hidden_dim) if use_se else nn.Sequential(),
+                # pw-linear
+                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.BatchNorm2d(oup),
+            )
+        self.use_shortcut = inp == oup and stride == 1
+
+    def forward(self, x):
+        if self.use_shortcut:
+            return self.conv(x) + x
+        return self.conv(x)
+
+
+class Identity(nn.Module):
+    def __init__(self, inp, oup, stride, **kwargs):
+        super(Identity, self).__init__(**kwargs)
+        if stride != 1 or inp != oup:
+            self.downsample = nn.Sequential(
+                nn.Conv2d(inp, oup, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(oup),
+            )
+        else:
+            self.downsample = None
+
+    def forward(self, x):
+        if self.downsample is not None:
+            x = self.downsample(x)
+        return x
+
+    def flops(self, input_shape):
+        if self.downsample is None:
+            return 0, input_shape
+        c, h, w = input_shape
+        m = self.downsample[0]
+        c = m.out_channels
+        w = (w + m.padding[0] * 2 - m.kernel_size[0]) // m.stride[0] + 1
+        h = (h + m.padding[1] * 2 - m.kernel_size[1]) // m.stride[1] + 1
+        flops = m.in_channels * m.out_channels * w * h // m.groups * m.kernel_size[0] * m.kernel_size[1]
+        return flops, (c, w, h)
+
+
+if __name__ == '__main__':
+    pass
+
+

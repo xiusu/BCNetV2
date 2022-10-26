@@ -1,0 +1,39 @@
+workers: 4
+epochs: 240
+start_epoch: 0
+batch_size: 128
+lr_scheduler:
+    type: 'cosine'
+    lr: 0.4
+    warmup_epochs: 5
+momentum: 0.9
+weight_decay: 4.e-5
+nesterov: False
+print_freq: 20
+resume:
+save: './workdir/autoslim/mbv2-retrain-305M'
+evaluate: False
+seed:
+
+data:
+    type: 'imagenet'
+    traindir: '/mnt/lustre/share/images/train/'
+    trainlabel: '/mnt/lustre/share/images/meta/train.txt'
+    valdir: '/mnt/lustre/share/images/val/'
+    vallabel: '/mnt/lustre/share/images/meta/val.txt'
+
+model:
+    type: 'SPOSModel'
+    backbone:
+        type: 'autoslimmobilenetv2'
+        #architect: [8, 8, 96, 16, 96, 16, 96, 24, 144, 24, 144, 24, 144, 48, 288, 48, 288, 48, 288, 48, 288, 64, 432, 64, 432, 64, 648, 176, 720, 176, 720, 176, 1440, 280, 1920]  # 207M, dynamic 12
+        architect: [8, 8, 96, 16, 96, 16, 96, 24, 144, 24, 144, 24, 144, 56, 288, 56, 288, 56, 288, 56, 288, 96, 432, 96, 432, 96, 864, 240, 1440, 240, 960, 240, 1440, 480, 1920]  # 305M, dynamic 12
+        #architect: [32, 16, 144, 24, 176, 24, 192, 48, 240, 48, 144, 48, 264, 88, 288, 88, 336, 88, 432, 88, 576, 144, 576, 144, 648, 144, 864, 240, 1440, 240, 1440, 240, 1440, 480, 1920]  # 505M, dynamic 12
+    loss:
+        type: 'CrossEntropyLabelSmooth'
+        num_classes: 1000
+        epsilon: 0.1
+
+trainer:
+    type: 'SPOS'
+    stage: ['evaluation']

@@ -1,0 +1,37 @@
+workers: 4
+epochs: 240
+start_epoch: 0
+batch_size: 64
+lr_scheduler:
+    type: 'cosine'
+    lr: 0.2
+    warmup_epochs: 0
+momentum: 0.9
+weight_decay: 4.e-5
+nesterov: False
+print_freq: 20
+resume:
+save: './workdir/spos/mbv2-retrain'
+evaluate: False
+seed:
+
+data:
+    type: 'imagenet'
+    traindir: './data/imagenet_nas/train/'
+    trainlabel: './data/imagenet_nas/meta_origin/train.txt'
+    valdir: './data/imagenet_nas/val/'
+    vallabel: './data/imagenet_nas/meta_origin/val.txt'
+
+model:
+    type: 'SPOSModel'
+    backbone:
+        type: 'mobilenetv2'
+        architect: [1, 6, 1, 6, 4, 4, 1, 6, 5, 0, 0, 2, 4, 2, 6, 2, 3, 2, 1, 3, 4]
+    loss:
+        type: 'CrossEntropyLabelSmooth'
+        num_classes: 1000
+        epsilon: 0.1
+
+trainer:
+    type: 'SPOS'
+    stage: ['evaluation']

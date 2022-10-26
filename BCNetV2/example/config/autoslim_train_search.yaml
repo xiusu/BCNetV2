@@ -1,0 +1,47 @@
+workers: 2
+epochs: 50
+start_epoch: 0
+batch_size: 64
+lr_scheduler:
+    type: 'cosine'
+    lr: 0.2
+    warmup_epochs: 0
+momentum: 0.9
+weight_decay: 4.e-5
+nesterov: False
+print_freq: 20
+resume: 
+save: './workdir/autoslim/mbv2-train-search'
+evaluate: False
+seed:
+
+data:
+    type: 'imagenet'
+    traindir: '/mnt/lustre/share/images/train/'
+    trainlabel: './data/imagenet/meta_nas/train.txt'
+    valdir: '/mnt/lustre/share/images/train/'
+    vallabel: './data/imagenet/meta_nas/val.txt'
+
+model:
+    type: 'SPOSModel'
+    backbone:
+        type: 'autoslimsearchmobilenetv2'
+    loss:
+        type: 'CrossEntropyLabelSmooth'
+        num_classes: 1000
+        epsilon: 0.1
+
+trainer:
+    type: 'AutoSlim'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'AutoSlim'
+        sampler:
+            type: 'autoslim'
+        searcher:    
+            type: 'greedy'
+            reset_batch_size: 256
+            target_flops: [550000000, 330000000, 220000000]
+    evaluator:
+        type: 'ImageNet'
+        bn_training_mode: True

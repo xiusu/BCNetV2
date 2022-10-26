@@ -1,4 +1,4 @@
-# BCNet: Searching for Network Width with Bilaterally Coupled Network
+# BCNetV2: Searching for Network Width with Bilaterally Coupled Network
 This repository includes the code for [BCNetV2: Searching for Network Width with Bilaterally Coupled Network](https://arxiv.org/pdf/2203.13714.pdf) and [BCNet: Searching for Network Width with Bilaterally Coupled Network](https://openaccess.thecvf.com/content/CVPR2021/papers/Su_BCNet_Searching_for_Network_Width_With_Bilaterally_Coupled_Network_CVPR_2021_paper.pdf). 
 BCNetV2 aims to search with neural architectures with more fairly way, [BCNetV2](https://github.com/xiusu/BCNetV2/tree/main/BCNetV2) is an improved version for [BCNet](https://github.com/xiusu/BCNetV2/tree/main/BCNet). BCNetV2 follows almost all settings of 
 BCNet and boost the search of supernet but standardized code.
@@ -46,7 +46,7 @@ Channel-Bench-Macro is a channel benchmark on macro search space. The Channel-Be
  parameters, FLOPs, and training logs on CIFAR-10 dataset. Channel-Bench-Macro is the corresponding benchmark of [NAS-Bench-Marco](https://github.com/xiusu/NAS-Bench-Macro),
   which serves for channel number search / channel pruning algorithms.
 
-All the evaluated architectures are stored in [Channel-Bench-Macro](https://github.com/xiusu/Channel-Bench-Macro) of file [Results_MobileNet.json](https://github.com/xiusu/Channel-Bench-Macro/blob/main/Results_MobileNet.json) and [Results_ResNet.json](https://github.com/xiusu/Channel-Bench-Macro/blob/main/Results_ResNet.json)  with the following format:
+All the evaluated architectures are stored in Channel-Bench-Macro of files [Results_MobileNet.json](https://github.com/xiusu/Channel-Bench-Macro/blob/main/Results_MobileNet.json) and [Results_ResNet.json](https://github.com/xiusu/Channel-Bench-Macro/blob/main/Results_ResNet.json)  with the following format:
 
 ```
 {

@@ -59,7 +59,7 @@ We have provided the upgraded version of BCNet, named [BCNetV2](https://arxiv.or
 In BCNetV2, we follow all basic settings as in BCNet and provide a choice for setting of the smallest channel group to reduce the search space. However, this setting will destory the 
 fairly training (all channels get the same number of training) of supernet. Thus we provide BCNetV2 as the enhanced supernet to ensure rigorous training fairness over channels. The search results can be
 largely boosted with the proposed BCNetV2 from BCNet.
-The code of BCNetV2 is provided in  [address](https://arxiv.org/pdf/2203.13714.pdf).
+The code of [BCNetV2] is provided in [here](https://github.com/xiusu/BCNetV2/tree/main/BCNetV2).
 
 ## Citation
 If you find that BCNet interesting and help your work, please consider citing it:

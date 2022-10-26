@@ -32,7 +32,7 @@ For someone who only want to leverage the useful architectures searched with BCN
  for the recorded architectures. Please note that for skipping layers or depthwise related layers, we merge the layers which are 
  required to have the same output dimensions.
 
-<img src="temp/fig_visualization_new.png" width="900" height="350">
+<img src="temp/fig_visualization_new.png" width="900" height="300">
 
 ## Usage  
 ```

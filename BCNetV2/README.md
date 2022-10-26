@@ -25,7 +25,7 @@ we can boost the search result with two ways.
 (1) BCNetV2 can boost the training fairness of supernet. With BCNetV2, all channels can be equally trained with the same training times. 
 Therefore, BCNetV2 can be more effective for ranking different architectures.
 
-<img src="figs/fig3.png" width="800" height="350"> 
+<img src="figs/fig3.png" width="900" height="400"> 
 
 (2) We propose to search with a pre-defined smallest channel groups, since a small dimension in one layer will destroy the performance of 
 an architecture. With a pre-defined smallest channel groups, the search space can be reduced by exponentially and thus boost the search results.

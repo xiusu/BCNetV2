@@ -1,6 +1,6 @@
 # BCNet: Searching for Network Width with Bilaterally Coupled Network
 This repository includes the code for [BCNetV2: Searching for Network Width with Bilaterally Coupled Network](https://arxiv.org/pdf/2203.13714.pdf) and [BCNet: Searching for Network Width with Bilaterally Coupled Network](https://openaccess.thecvf.com/content/CVPR2021/papers/Su_BCNet_Searching_for_Network_Width_With_Bilaterally_Coupled_Network_CVPR_2021_paper.pdf). 
-BCNetV2 aims to search with neural architectures with more fairly way, BCNetV2 is an improved version for BCNet([paper](https://arxiv.org/pdf/2203.13714.pdf), [code](XXXX)). BCNetV2 follows almost all settings of 
+BCNetV2 aims to search with neural architectures with more fairly way, [BCNetV2](https://github.com/xiusu/BCNetV2/tree/main/BCNetV2) is an improved version for [BCNet](https://github.com/xiusu/BCNetV2/tree/main/BCNet). BCNetV2 follows almost all settings of 
 BCNet and boost the search of supernet but standardized code.
 
 ## Dependences

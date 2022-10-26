@@ -26,13 +26,13 @@ BCNet is a plug and play method and can be easily used within other channel numb
 From our experience, you can boost your search result with 1% on Top-1 accuray with ImageNet dataset by using BCNet in other NAS methods.
 If you have any questions, please comment with an issue.
 
-<img src="temp/fig1.png" width="1000" height="300"> 
+<img src="temp/fig1.png" width="900" height="300"> 
 
 For someone who only want to leverage the useful architectures searched with BCNet, you can refer to ''[temp/search_results.xlsx](https://github.com/xiusu/BCNetV2/blob/main/BCNet/temp/search_results.xlsx)''
  for the recorded architectures. Please note that for skipping layers or depthwise related layers, we merge the layers which are 
  required to have the same output dimensions.
 
-<img src="temp/fig_visualization_new.png" width="1000" height="350">
+<img src="temp/fig_visualization_new.png" width="900" height="350">
 
 ## Usage  
 ```

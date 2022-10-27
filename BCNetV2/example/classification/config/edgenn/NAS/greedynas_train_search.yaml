@@ -1,0 +1,44 @@
+model:
+    type: 'SPOSModel'
+    backbone:
+        type: 'mobilenetv2'
+    loss:
+        type: 'CrossEntropyLabelSmooth'
+        num_classes: 1000
+        epsilon: 0.1
+
+trainer:
+    type: 'SPOS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'GreedyNAS'
+        sampler:
+            type: 'greedy'     
+            flops_constraint: 330000000
+            pool_size: 1000
+            multi_path:
+                sample_num: 10
+                topk: 5
+            p_strategy:
+                type: 'linear'
+                start_iter: 10000  # 1203 iters/epoch, warm-up 10k iters in GreedyNAS
+                max_iter: 144360  # 150 epochs
+                init_p: 0.
+                max_p: 0.8
+        searcher:    
+            type: 'evolution'    
+            max_epoch: 20
+            flops_limit: 330000000
+            population_num: 50
+            top_k_num: 10
+            mutation_num: 25
+            mutation_prob: 0.1
+            crossover_num: 25
+    train_evaluator:
+        type: 'train_evaluator'
+        update_data_freq: -1
+        metric: 'loss'
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 20
+

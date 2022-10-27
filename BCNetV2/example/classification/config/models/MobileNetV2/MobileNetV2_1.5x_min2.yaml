@@ -1,0 +1,17 @@
+backbone:
+    # name: [n, stride, in_channels, out_channels, expand_ratio, op]
+    conv_stem: [1, 2, 3, 53, 1, 'conv3x3']
+    stage_0: [1, 1, 53, 26, 1, 'ir_3x3']
+    stage1: [2, 2, 26, 40, 6, 'ir_3x3']
+    stage2: [3, 2, 40, 53, 6, 'ir_3x3']
+    stage3: [4, 2, 53, 158, 6, 'ir_3x3']
+    stage4: [3, 1, 158, 158, 6, 'ir_3x3']
+    stage5: [3, 2, 158, 264, 6, 'ir_3x3']
+    stage6: [1, 1, 264, 528, 6, 'ir_3x3']
+    conv_out: [1, 1, 528, 2112, 1, 'conv1x1']
+    gavg_pool: [1, 2112, 2112, 1, 'gavgp']
+head:
+    linear1:
+        dim_in: 2112
+        dim_out: 1000
+

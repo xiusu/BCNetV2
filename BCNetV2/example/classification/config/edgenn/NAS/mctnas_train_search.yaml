@@ -1,0 +1,41 @@
+model:
+    type: 'SPOSModel'
+    backbone:
+        type: 'mobilenetv2'
+    loss:
+        type: 'CrossEntropyLabelSmooth'
+        num_classes: 1000
+        epsilon: 0.1
+
+trainer:
+    type: 'MCTNAS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'MCTNAS'
+        sampler:
+            type: 'mct'     
+            flops_min: 280000000
+            flops_max: 380000000
+            max_times: 100
+            warmup_iters: 72180  # 1203 x 60
+            mct_start_iter: 102255  # 1203 x 85
+            beta: 0.96
+            gamma: 0.96
+            C1: 0.1
+            C2: 0.2
+            tau: 0.0025
+        searcher:    
+            type: 'mct'    
+            search_num: 20
+            flops_limit: 330000000
+            flops_min: 320000000
+            n_thrd: 6
+            tau: 0.0025
+    train_evaluator:
+        type: 'train_evaluator'
+        update_data_freq: 1000
+        metric: 'loss'
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 20
+

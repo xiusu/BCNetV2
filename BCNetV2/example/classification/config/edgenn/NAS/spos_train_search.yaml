@@ -1,0 +1,20 @@
+trainer:
+    type: 'SPOS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'SPOS'
+        sampler:
+            type: 'uniform'     
+        searcher:    
+            type: 'evolution' 
+            max_epoch: 20
+            flops_limit: 330000000
+            population_num: 50
+            top_k_num: 10
+            mutation_num: 25
+            mutation_prob: 0.1
+            crossover_num: 25
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 20
+        bn_training_mode: False

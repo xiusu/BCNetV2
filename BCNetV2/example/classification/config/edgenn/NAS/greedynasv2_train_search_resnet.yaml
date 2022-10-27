@@ -1,0 +1,38 @@
+trainer:
+    type: 'SPOS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'GreedyNASV2'
+        sampler:
+            type: 'greedyv2'     
+            flops_constraint: 330000000
+            predictor_train_freq: 3609
+            subnet_eval_num: 2000
+            min_prior: 0.5
+            max_prior: 0.99
+            sim_thrd: 0.8
+            p_strategy:
+                type: 'linear'
+                start_iter: 24060  # 1203 iters/epoch, warm-up 20 epochs in GreedyNAS V2
+                max_iter: 108270 #48120 #144360  # 120 epochs
+                init_p: 1.0
+                max_p: 1.0
+        searcher:    
+            type: 'greedyv2'    
+            prior: 0.99
+            max_epoch: 20
+            flops_limit: 4200000000
+            flops_min: 4000000000
+            population_num: 50
+            top_k_num: 10
+            mutation_num: 25
+            mutation_prob: 0.1
+            crossover_num: 25
+    train_evaluator:
+        type: 'train_evaluator'
+        update_data_freq: -1
+        metric: 'loss'
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 40
+        #bn_training_mode: True

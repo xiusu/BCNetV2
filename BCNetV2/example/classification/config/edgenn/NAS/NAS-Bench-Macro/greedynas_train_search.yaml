@@ -1,0 +1,39 @@
+trainer:
+    type: 'SPOS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'GreedyNAS'
+        sampler:
+            type: 'greedy'     
+            pool_size: 100
+            multi_path:
+                sample_num: 10
+                topk: 5
+            p_strategy:
+                type: 'linear'
+                start_iter: 1000  # 196 iters/epoch, warm-up 1k iters in GreedyNAS
+                max_iter: 9800  # 50 epochs
+                init_p: 0.
+                max_p: 0.
+        #searcher:    
+        #    type: 'evolution'    
+        #    max_epoch: 20
+        #    population_num: 50
+        #    top_k_num: 10
+        #    mutation_num: 25
+        #    mutation_prob: 0.1
+        #    crossover_num: 25
+        searcher:
+            type: 'manual'
+            subnet_path: 'data/nas-bench-macro_subnets.txt'
+            flops_limit: -1
+            input_shape: [3, 32, 32]
+    train_evaluator:
+        type: 'train_evaluator'
+        update_data_freq: -1
+        metric: 'loss'
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 20
+        bn_training_mode: False 
+

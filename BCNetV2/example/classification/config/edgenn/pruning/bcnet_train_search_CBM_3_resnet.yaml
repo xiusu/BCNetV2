@@ -1,0 +1,22 @@
+trainer:
+    type: 'BCNet'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'BCNet'
+        channel_bins: 4
+        min_channel_bins: 1
+        loss_rec_num: 100
+        sampler:
+            type: 'BCNet'
+            complementary_sampler: True
+        searcher:    
+            type: 'manual_bcnet'
+            input_shape: [3, 224, 224]
+            AutoSlim: False         # False for BCNet, True for AutoSlim
+            subnet_path: 'json_results/record_json/Results_ResNet.json' 
+            record_path: 'json_results/bin20_min1_bcnet_3_resnet.json'
+    evaluator:
+        type: 'ImageNet'
+        bn_training_mode: False
+        recal_bn_iters: 20
+

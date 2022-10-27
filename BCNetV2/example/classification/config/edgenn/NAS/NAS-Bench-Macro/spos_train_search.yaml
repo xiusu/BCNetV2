@@ -1,0 +1,29 @@
+trainer:
+    type: 'SPOS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'SPOS'
+        sampler:
+            type: 'uniform'     
+        #searcher:    
+        #    type: 'evolution' 
+        #    max_epoch: 20
+        #    flops_limit: -1
+        #    population_num: 50
+        #    top_k_num: 10
+        #    mutation_num: 25
+        #    mutation_prob: 0.1
+        #    crossover_num: 25
+        searcher:
+            type: 'manual'
+            subnet_path: 'data/nas-bench-macro_subnets.txt'
+            flops_limit: -1
+            input_shape: [3, 32, 32]
+        #searcher:
+        #    type: 'random'
+        #    flops_limit: -1
+        #    search_num: 1000
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 20
+        bn_training_mode: False

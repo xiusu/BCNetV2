@@ -1,0 +1,18 @@
+# 25/20 = 1.25 X
+backbone:
+    # name: [n, stride, in_channels, out_channels, expand_ratio, op]
+    conv_stem: [1, 2, 3, 40, 1, 'conv3x3']
+    stage_0: [1, 1, 40, 20, 1, 'ir_3x3']
+    stage1: [2, 2, 20, 30, 6, 'ir_3x3']
+    stage2: [3, 2, 30, 40, 6, 'ir_3x3']
+    stage3: [4, 2, 40, 80, 6, 'ir_3x3']
+    stage4: [3, 1, 80, 120, 6, 'ir_3x3']
+    stage5: [3, 2, 120, 200, 6, 'ir_3x3']
+    stage6: [1, 1, 200, 400, 6, 'ir_3x3']
+    conv_out: [1, 1, 400, 1600, 1, 'conv1x1']
+    gavg_pool: [1, 1600, 1600, 1, 'gavgp']
+head:
+    linear1:
+        dim_in: 1600
+        dim_out: 1000
+

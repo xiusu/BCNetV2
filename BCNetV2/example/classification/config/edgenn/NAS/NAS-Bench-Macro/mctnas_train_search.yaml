@@ -1,0 +1,33 @@
+trainer:
+    type: 'MCTNAS'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'MCTNAS'
+        sampler:
+            type: 'mct'     
+            warmup_iters: 4900  # 196 x 25
+            mct_start_iter: 5880  # 196 x 30
+            beta: 0.96
+            gamma: 0.96
+            C1: 0.1
+            C2: 0.2
+            tau: 0.0025
+        #searcher:    
+        #    type: 'mct'    
+        #    search_num: 1000
+        #    n_thrd: 6
+        #    tau: 0.0025
+        searcher:
+            type: 'manual'
+            subnet_path: 'data/nas-bench-macro_subnets.txt'
+            flops_limit: -1
+            input_shape: [3, 32, 32]
+    train_evaluator:
+        type: 'train_evaluator'
+        update_data_freq: 1000
+        metric: 'loss'
+    evaluator:
+        type: 'ImageNet'
+        recal_bn_iters: 20
+        bn_training_mode: False
+

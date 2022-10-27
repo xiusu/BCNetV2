@@ -1,0 +1,27 @@
+model:
+    type: 'DARTSSearchModel'
+    backbone:
+        type: 'PCDARTSSearchNetwork'
+        C: 16
+        num_classes: 1000
+        layers: 8
+        k: 2
+        stem_type: 'imagenet'
+    loss:
+        type: 'CrossEntropyLoss'
+
+trainer:
+    type: 'DARTS'
+    stage: ['supernet', 'search']
+    #early_stop:
+    #    skip_in_norm_cell: 2
+    #    arch_rank_stable_epoch: 10
+    warmup_epoch: 35
+    algorithm:
+        type: 'DARTS'
+        unrolled: True
+        optimizer:
+            type: 'Adam'
+            lr: 6.e-3
+            betas: [0.5, 0.999]
+            weight_decay: 1.e-3

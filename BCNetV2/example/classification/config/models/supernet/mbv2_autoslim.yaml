@@ -1,0 +1,27 @@
+backbone:
+    # name: [stride, in_channels, out_channels, expand_ratio, op, kwargs]
+    conv_stem: [2, 3, 36, 1, 'conv3x3', {'channel_bins': 9, 'min_channel_bins': 1}]
+    stage_0: [1, 36, 36, 1, 'ir_3x3', {'channel_bins': 9, 'min_channel_bins': 1, 'use_residual': False}]
+    stage1_1: [2, 36, 40, 6, 'ir_3x3', {'channel_bins': 10, 'min_channel_bins': 2}]
+    stage1_2: [1, 40, 40, 6, 'ir_3x3', {'channel_bins': 10, 'min_channel_bins': 2}]
+    stage2_1: [2, 40, 48, 6, 'ir_3x3']
+    stage2_2: [1, 48, 48, 6, 'ir_3x3']
+    stage2_3: [1, 48, 48, 6, 'ir_3x3']
+    stage3_1: [2, 48, 96, 6, 'ir_3x3'] 
+    stage3_2: [1, 96, 96, 6, 'ir_3x3'] 
+    stage3_3: [1, 96, 96, 6, 'ir_3x3'] 
+    stage3_4: [1, 96, 96, 6, 'ir_3x3'] 
+    stage3_5: [1, 96, 144, 6, 'ir_3x3'] 
+    stage3_6: [1, 144, 144, 6, 'ir_3x3'] 
+    stage3_7: [1, 144, 144, 6, 'ir_3x3'] 
+    stage4_1: [2, 144, 240, 6, 'ir_3x3']
+    stage4_2: [1, 240, 240, 6, 'ir_3x3'] 
+    stage4_3: [1, 240, 240, 6, 'ir_3x3'] 
+    stage4_4: [1, 240, 480, 6, 'ir_3x3'] 
+    conv_out: [1, 480, 1920, 1, 'conv1x1']
+    gavg_pool: [1, 1920, 1920, 1, 'gavgp']
+head:
+    linear1:
+        dim_in: 1920
+        dim_out: 1000
+

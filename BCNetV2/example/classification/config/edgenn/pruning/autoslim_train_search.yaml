@@ -1,0 +1,17 @@
+trainer:
+    type: 'AutoSlim'
+    stage: ['supernet', 'search']
+    inplace_distillation: True
+    algorithm:
+        type: 'AutoSlim'
+        channel_bins: 12
+        min_channel_bins: 4
+        sampler:
+            type: 'autoslim'
+        searcher:    
+            type: 'greedy'
+            #reset_batch_size: 256
+            target_flops: [550000000, 330000000, 220000000]
+    evaluator:
+        type: 'ImageNet'
+        bn_training_mode: True

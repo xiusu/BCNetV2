@@ -1,0 +1,14 @@
+backbone:
+    # name: [n, stride, in_channels, out_channels, expand_ratio, op]
+    conv_stem: [1, 2, 3, 64, 1, 'conv7x7']
+    pool1: [1, 2, 64, 64, 1, 'maxp_3x3']
+    stage1: [3, 1, 64, 256, [8, 4, 2.6666], [ 'res_3x3_se_e', 'res_5x5_se_e', 'res_7x7_se_e', 'resnext_3x3_se_e', 'resnext_5x5_se_e', 'resnext_7x7_se_e', 'id'], {'planes': 64}]
+    stage2: [4, 2, 256, 512, [8, 4, 2.6666], ['res_3x3_se_e', 'res_5x5_se_e', 'res_7x7_se_e', 'resnext_3x3_se_e', 'resnext_5x5_se_e', 'resnext_7x7_se_e', 'id']]
+    stage3: [6, 2, 512, 1024, [8, 4, 2.6666], ['res_3x3_se_e', 'res_5x5_se_e', 'res_7x7_se_e', 'resnext_3x3_se_e', 'resnext_5x5_se_e', 'resnext_7x7_se_e', 'id']]
+    stage4: [3, 2, 1024, 2048, [8, 4, 2.6666], ['res_3x3_se_e', 'res_5x5_se_e', 'res_7x7_se_e', 'resnext_3x3_se_e', 'resnext_5x5_se_e', 'resnext_7x7_se_e', 'id']]
+    gavg_pool: [1, 2048, 2048, 1, 'gavgp']
+head:
+    linear1:
+        dim_in: 2048
+        dim_out: 1000
+

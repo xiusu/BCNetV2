@@ -1,0 +1,27 @@
+trainer:
+    type: 'BCNet'
+    stage: ['supernet', 'search']
+    algorithm:
+        type: 'BCNet'
+        channel_bins: 25
+        min_channel_bins: 5
+        loss_rec_num: 100
+        sampler:
+            type: 'BCNet'
+            complementary_sampler: True
+        searcher:    
+            type: 'BCNet'
+            input_shape: [3, 224, 224]
+            max_epoch: 40
+            flops_limit: 50000000
+            population_num: 80
+            top_k_num: 10
+            mutation_num: 25
+            mutation_prob: 0.1
+            crossover_num: 25
+            prior_init: True
+    evaluator:
+        type: 'ImageNet'
+        bn_training_mode: False
+        recal_bn_iters: 20
+
